@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>厨房出品管理中心 (KDS v3)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            background-color: #030712; /* Rich Black */
+            color: #f9fafb;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .kanban-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            height: calc(100vh - 100px);
+        }
+        .kanban-column {
+            background-color: #111827;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .kanban-column-header {
+            padding: 1rem 1.25rem;
+            font-size: 1.25rem;
+            font-weight: 700;
+            border-bottom: 2px solid;
+        }
+        #prep-column .kanban-column-header { border-color: #3b82f6; } /* Blue */
+        #cooking-column .kanban-column-header { border-color: #f59e0b; } /* Amber */
+        #ready-column .kanban-column-header { border-color: #22c55e; } /* Green */
+
+        .kanban-tickets-container {
+            padding: 1rem;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .ticket {
+            background-color: #1f2937;
+            border-radius: 0.5rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+        .ticket-header {
+            padding: 0.75rem 1rem;
+            background-color: #374151;
+            border-top-left-radius: 0.5rem;
+            border-top-right-radius: 0.5rem;
+        }
+        .dish-item {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #374151;
+            transition: background-color 0.3s;
+        }
+        .dish-item:last-child { border-bottom: none; }
+
+        .action-btn {
+            padding: 0.3rem 0.8rem; border-radius: 0.375rem; font-weight: 600; font-size: 0.875rem;
+            transition: all 0.2s; will-change: transform;
+        }
+        .action-btn:hover { transform: scale(1.05); }
+        .prep-done-btn { background-color: #3b82f6; color: #eff6ff; }
+        .cook-done-btn { background-color: #f59e0b; color: #422006; }
+        .serve-done-btn { background-color: #22c55e; color: #064e3b; }
+
+        .order-complete-btn {
+            background-color: #16a34a; color: white;
+            opacity: 0.5; cursor: not-allowed;
+        }
+        .order-complete-btn.active {
+            opacity: 1; cursor: pointer;
+        }
+        .order-complete-btn.active:hover { background-color: #15803d; }
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <header class="flex justify-between items-center mb-6 h-[52px]">
+        <h1 class="text-3xl font-bold text-gray-100">厨房出品管理中心</h1>
+        <div class="text-lg text-gray-300">
+            <span>当前时间: </span>
+            <span id="current-time" class="font-semibold text-white"></span>
+        </div>
+    </header>
+
+    <main class="kanban-board">
+        <!-- 备菜区 -->
+        <div id="prep-column" class="kanban-column">
+            <div class="kanban-column-header text-blue-400">
+                待备菜 (<span id="prep-count">0</span>)
+            </div>
+            <div id="prep-tickets-container" class="kanban-tickets-container space-y-5"></div>
+        </div>
+
+        <!-- 烹饪区 -->
+        <div id="cooking-column" class="kanban-column">
+            <div class="kanban-column-header text-amber-400">
+                待烹饪 (<span id="cooking-count">0</span>)
+            </div>
+            <div id="cooking-tickets-container" class="kanban-tickets-container space-y-5"></div>
+        </div>
+
+        <!-- 出餐区 -->
+        <div id="ready-column" class="kanban-column">
+            <div class="kanban-column-header text-green-400">
+                待出餐 (<span id="ready-count">0</span>)
+            </div>
+            <div id="ready-tickets-container" class="kanban-tickets-container space-y-5"></div>
+        </div>
+    </main>
+    
+    <div id="placeholder" class="fixed inset-0 flex items-center justify-center -z-10">
+        <p class="text-3xl text-gray-700">等待新订单...</p>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getFirestore, collection, query, where, onSnapshot, doc, updateDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        
+        let db;
+        let knownOrderIds = new Set();
+        const synth = new Tone.Synth().toDestination();
+
+        async function initializeFirebase() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBjF_aSG30O_l8q4btRxdxpsz4ftwrsM1g",
+                authDomain: "yundingxuan-restaurant.firebaseapp.com",
+                projectId: "yundingxuan-restaurant",
+                storageBucket: "yundingxuan-restaurant.appspot.com",
+                messagingSenderId: "534167593828",
+                appId: "1:534167593828:web:9fb11dac7e69c11324d071",
+                measurementId: "G-218QGY5V8N"
+            };
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                await signInAnonymously(auth);
+                console.log("KDS v3 Initialized.");
+                return true;
+            } catch (error) {
+                console.error("KDS Firebase initialization failed:", error);
+                document.getElementById('placeholder').innerHTML = `<p class="text-2xl text-red-400">系统连接失败！</p>`;
+                return false;
+            }
+        }
+
+        function playNotification() {
+            try {
+                Tone.start();
+                synth.triggerAttackRelease("C5", "8n", Tone.now());
+                synth.triggerAttackRelease("G5", "8n", Tone.now() + 0.2);
+            } catch(e) { console.warn("Could not play sound:", e); }
+        }
+
+        // --- 核心逻辑：专业出餐顺序 ---
+        // 为不同类型的菜品分配优先级。数字越小，优先级越高。
+        function getCoursePriority(itemName) {
+            const name = itemName || '';
+            if (['凉', '沙拉', '刺身', '汁', '前菜'].some(k => name.includes(k))) return 1; // 凉菜/前菜
+            if (['汤', '羹'].some(k => name.includes(k))) return 2; // 汤品
+            if (['饭', '面', '粥', '粽', '饺'].some(k => name.includes(k))) return 4; // 主食
+            if (['汁', '茶', '酒'].some(k => name.includes(k))) return 5; // 饮品
+            return 3; // 默认热菜
+        }
+
+        function renderKanban(orders) {
+            const prepContainer = document.getElementById('prep-tickets-container');
+            const cookingContainer = document.getElementById('cooking-tickets-container');
+            const readyContainer = document.getElementById('ready-tickets-container');
+            const placeholder = document.getElementById('placeholder');
+            
+            prepContainer.innerHTML = '';
+            cookingContainer.innerHTML = '';
+            readyContainer.innerHTML = '';
+
+            let prepCount = 0, cookingCount = 0, readyCount = 0;
+
+            if (orders.length === 0) {
+                placeholder.classList.remove('hidden');
+            } else {
+                placeholder.classList.add('hidden');
+            }
+
+            // Sort orders by timestamp (oldest first)
+            orders.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
+
+            orders.forEach(order => {
+                // Classify dishes into stages
+                const prepItems = [], cookingItems = [], readyItems = [];
+                
+                // Sort items within the order based on professional serving priority
+                order.items.sort((a, b) => getCoursePriority(a.name) - getCoursePriority(b.name));
+
+                order.items.forEach(item => {
+                    if (item.status === 'new') prepItems.push(item);
+                    else if (item.status === 'preparing') cookingItems.push(item);
+                    else if (item.status === 'ready') readyItems.push(item);
+                });
+
+                // Render dishes in their respective columns
+                prepCount += prepItems.length;
+                cookingCount += cookingItems.length;
+                readyCount += readyItems.length;
+                
+                if (prepItems.length > 0) prepContainer.appendChild(createTicket('prep', order, prepItems));
+                if (cookingItems.length > 0) cookingContainer.appendChild(createTicket('cooking', order, cookingItems));
+                if (readyItems.length > 0) readyContainer.appendChild(createTicket('ready', order, readyItems));
+
+                if (order.status === 'new' && !knownOrderIds.has(order.id)) {
+                    playNotification();
+                    knownOrderIds.add(order.id);
+                }
+            });
+
+            document.getElementById('prep-count').textContent = prepCount;
+            document.getElementById('cooking-count').textContent = cookingCount;
+            document.getElementById('ready-count').textContent = readyCount;
+        }
+
+        function createTicket(stage, order, items) {
+            const ticketEl = document.createElement('div');
+            ticketEl.className = 'ticket';
+            
+            const timeAgo = (ts) => ts ? `${Math.round((Date.now() / 1000 - ts.seconds) / 60)}分钟前` : '...';
+
+            let itemsHtml = items.map((item, index) => {
+                // The original index is needed to update the correct item in Firestore
+                const originalIndex = order.items.findIndex(i => i.name === item.name && i.quantity === item.quantity && i.status === item.status);
+                let details = [item.selectedPortion, item.selectedStyle, item.weight ? `${item.weight}${item.unit}` : null].filter(Boolean).join(', ');
+                
+                let actionButtonHtml = '';
+                if (stage === 'prep') {
+                    actionButtonHtml = `<button data-order-id="${order.id}" data-item-index="${originalIndex}" class="action-btn prep-done-btn">备菜完成</button>`;
+                } else if (stage === 'cooking') {
+                    actionButtonHtml = `<button data-order-id="${order.id}" data-item-index="${originalIndex}" class="action-btn cook-done-btn">烹饪完成</button>`;
+                }
+                
+                return `
+                    <div class="dish-item flex justify-between items-center">
+                        <div class="flex-grow">
+                            <p class="font-bold text-lg text-gray-100">${item.name} <span class="font-normal text-gray-300">x ${item.quantity}</span></p>
+                            ${details ? `<p class="text-sm text-gray-400">${details}</p>` : ''}
+                        </div>
+                        <div class="flex-shrink-0 ml-2">${actionButtonHtml}</div>
+                    </div>
+                `;
+            }).join('');
+            
+            let footerHtml = '';
+            if (stage === 'ready') {
+                const allOriginalItemsReady = order.items.every(item => item.status === 'ready');
+                footerHtml = `
+                    <div class="p-2">
+                        <button data-order-id="${order.id}" class="w-full text-md font-bold py-2 rounded-md transition-colors order-complete-btn ${allOriginalItemsReady ? 'active' : ''}">
+                            整单上菜
+                        </button>
+                    </div>`;
+            }
+
+            ticketEl.innerHTML = `
+                <div class="ticket-header flex justify-between items-center">
+                    <h3 class="text-3xl font-bold">${order.tableId}</h3>
+                    <span class="text-sm text-gray-300">${timeAgo(order.timestamp)}</span>
+                </div>
+                <div class="dish-list">${itemsHtml}</div>
+                ${footerHtml}
+            `;
+            return ticketEl;
+        }
+
+        async function updateItemStatus(orderId, itemIndex, newStatus) {
+            const orderDocRef = doc(db, "orders", orderId);
+            const updatePath = `items.${itemIndex}.status`;
+            await updateDoc(orderDocRef, { [updatePath]: newStatus });
+        }
+        
+        async function completeOrder(orderId) {
+            const orderDocRef = doc(db, "orders", orderId);
+            await updateDoc(orderDocRef, { status: "completed" });
+        }
+
+        async function main() {
+            const firebaseReady = await initializeFirebase();
+            if (!firebaseReady) return;
+
+            const timeEl = document.getElementById('current-time');
+            setInterval(() => {
+                timeEl.textContent = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            }, 1000);
+
+            const q = query(collection(db, "orders"), where("status", "in", ["new", "preparing"]));
+            onSnapshot(q, (snapshot) => {
+                const orders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                renderKanban(orders);
+            });
+            
+            document.body.addEventListener('click', async (e) => {
+                const target = e.target;
+                const { orderId, itemIndex } = target.dataset;
+
+                if (target.classList.contains('prep-done-btn')) {
+                    await updateItemStatus(orderId, itemIndex, 'preparing');
+                } else if (target.classList.contains('cook-done-btn')) {
+                    await updateItemStatus(orderId, itemIndex, 'ready');
+                } else if (target.classList.contains('order-complete-btn') && target.classList.contains('active')) {
+                    await completeOrder(orderId);
+                }
+            });
+        }
+        
+        main();
+    </script>
+</body>
+</html>

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>云顶轩 - 专业餐饮系统 v2</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-accent: #0d9488; /* A sophisticated teal */
+            --primary-accent-dark: #0f766e;
+            --light-bg: #f8fafc;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', 'Noto Sans SC', sans-serif;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .category-button.active {
+            background-color: var(--primary-accent);
+            color: #FFFFFF;
+            font-weight: 600;
+            transform: scale(1.05);
+            box-shadow: 0 4px 14px 0 rgba(13, 148, 136, 0.39);
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .modal-radio-label {
+            display: block; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem;
+            cursor: pointer; transition: all 0.2s ease-in-out; text-align: center;
+        }
+        .modal-radio-label:hover { border-color: var(--primary-accent); }
+        input[type="radio"]:checked + .modal-radio-label {
+            background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); font-weight: 500;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 antialiased">
+    <div id="app" class="w-full h-screen overflow-hidden">
+        <!-- Login Page -->
+        <div id="login-page" class="w-full h-full flex items-center justify-center bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop');">
+            <div class="bg-white/90 p-10 rounded-2xl shadow-2xl text-center max-w-md w-full backdrop-blur-sm">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">云顶轩</h1>
+                <p class="text-gray-600 mb-8">专业餐饮管理系统 v2</p>
+                <div class="mb-6">
+                    <input type="text" id="waiter-id" placeholder="请输入 7 位服务员编号" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 text-center tracking-[0.2em]" maxlength="7" pattern="\d{7}">
+                </div>
+                <button id="login-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl">登录</button>
+                <p id="login-error" class="text-red-500 mt-4 h-6"></p>
+            </div>
+        </div>
+
+        <!-- Setup Page -->
+        <div id="setup-page" class="w-full h-full flex items-center justify-center bg-slate-50 hidden">
+            <div class="bg-white p-10 rounded-2xl shadow-xl text-center max-w-lg w-full">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8">开台设置</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label for="guest-count" class="block text-left text-lg font-medium text-gray-700 mb-2">客人人数</label>
+                        <input type="number" id="guest-count" placeholder="请输入客人数量" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                    </div>
+                    <div>
+                        <label for="dining-type" class="block text-left text-lg font-medium text-gray-700 mb-2">用餐类型</label>
+                        <select id="dining-type" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 bg-white">
+                            <option value="商务宴请">商务宴请</option>
+                            <option value="私密包厢">私密包厢</option>
+                            <option value="家庭聚会">家庭聚会</option>
+                            <option value="情侣约会">情侣约会</option>
+                            <option value="团队建设">团队建设</option>
+                            <option value="大厅散台">大厅散台</option>
+                            <option value="朋友家常">朋友家常</option>
+                        </select>
+                    </div>
+                </div>
+                <button id="find-table-btn" class="w-full mt-10 bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl">智能配桌并开始点餐</button>
+                <p id="setup-error" class="text-red-500 mt-4 h-6"></p>
+                <p id="table-recommendation" class="text-green-600 font-semibold mt-4 h-8 text-xl"></p>
+            </div>
+        </div>
+
+        <!-- Menu Page -->
+        <div id="menu-page" class="w-full h-screen flex bg-slate-100 hidden">
+             <aside class="w-64 bg-white text-gray-800 flex flex-col p-4 shadow-lg border-r border-slate-200">
+                <div class="text-center mb-6 border-b border-slate-200 pb-4">
+                     <h1 class="text-2xl font-bold text-teal-700">云顶轩</h1>
+                     <p class="text-sm text-slate-500 mt-2">服务员: <span id="display-waiter-id" class="font-semibold"></span></p>
+                     <p class="text-sm text-slate-500">桌号: <span id="display-table-info" class="font-semibold"></span></p>
+                </div>
+                <nav id="category-nav" class="flex-grow space-y-2 overflow-y-auto"></nav>
+                 <button id="add-new-dish-btn-main" class="mt-4 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg transition duration-300">增加新菜品</button>
+            </aside>
+
+            <main class="flex-1 p-6 overflow-y-auto">
+                <h2 id="current-category-title" class="text-3xl font-bold text-gray-800 mb-6">推荐菜品</h2>
+                <div id="menu-items-container" class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));"></div>
+            </main>
+
+            <aside class="w-[420px] bg-white p-6 flex flex-col shadow-2xl border-l border-slate-200">
+                <h3 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-200 pb-4 mb-4">当前订单</h3>
+                <div id="order-summary" class="flex-grow overflow-y-auto -mr-6 pr-5">
+                    <p id="empty-order-message" class="text-gray-500 text-center mt-10">您的订单是空的</p>
+                </div>
+                <div class="mt-auto border-t-2 border-gray-200 pt-4">
+                    <div class="flex justify-between items-center text-xl font-bold text-gray-800 mb-4">
+                        <span>总计</span>
+                        <span id="total-price">¥ 0.00</span>
+                    </div>
+                    <button id="submit-order-btn" class="w-full bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>发送至厨房</button>
+                </div>
+            </aside>
+        </div>
+        
+        <div id="confirmation-page" class="w-full h-full flex items-center justify-center bg-green-50 hidden">
+            <div class="bg-white p-12 rounded-2xl shadow-xl text-center max-w-lg w-full">
+                <svg class="w-24 h-24 text-green-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <h2 class="text-4xl font-bold text-gray-800 mb-4">下单成功</h2>
+                <p class="text-xl text-gray-600 mb-8">订单已成功发送至厨房</p>
+                <button id="new-order-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300">创建新订单</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modals -->
+    <div id="item-options-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
+            <h3 class="text-2xl font-bold mb-4 text-gray-800 flex-shrink-0" id="item-options-title">菜品选项</h3>
+            <div class="overflow-y-auto space-y-5 pr-2 -mr-4 flex-grow">
+                <div id="portions-section" class="hidden">
+                    <h4 class="font-semibold text-gray-700 mb-2">选择分量</h4>
+                    <div id="portions-container" class="grid grid-cols-3 gap-2"></div>
+                </div>
+                <div id="cooking-styles-section" class="hidden">
+                    <h4 class="font-semibold text-gray-700 mb-2">选择做法</h4>
+                    <div id="cooking-styles-container" class="grid grid-cols-2 gap-2"></div>
+                </div>
+                <div id="custom-price-section" class="hidden">
+                    <h4 class="font-semibold text-gray-700 mb-2">时令价 (每 <span id="custom-price-unit"></span>)</h4>
+                    <input type="number" id="custom-price-input" class="w-full px-4 py-2 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500" placeholder="输入当前市价">
+                </div>
+                <div id="weight-section" class="hidden">
+                    <h4 class="font-semibold text-gray-700 mb-2">输入数量 (<span id="weight-unit"></span>)</h4>
+                    <input type="number" id="weight-input" class="w-full px-4 py-2 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500" placeholder="例如: 1.5">
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6 flex-shrink-0">
+                <button id="cancel-options-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
+                <button id="confirm-options-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="add-dish-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50 p-4">
+        <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg max-h-[95vh] flex flex-col">
+            <h3 class="text-2xl font-bold mb-6 flex-shrink-0">增加新菜品</h3>
+            <div class="space-y-4 overflow-y-auto pr-2 -mr-4 flex-grow">
+                <input type="text" id="new-dish-name" placeholder="菜品名称 (必填)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                <input type="text" id="new-dish-price" placeholder="价格(数字, 或 小:28,中:38,大:58)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                <select id="new-dish-category" class="w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500"></select>
+                <select id="new-dish-type" class="w-full px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                    <option value="招牌">招牌</option>
+                    <option value="商务">商务</option><option value="包厢">包厢</option><option value="家庭">家庭</option>
+                    <option value="普通">普通</option><option value="家常">家常</option>
+                </select>
+                <input type="text" id="new-dish-unit" placeholder="单位 (例如: 份, 公斤, 个)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                <input type="text" id="new-dish-cooking-styles" placeholder="可选做法 (用逗号分隔, 如 蒸,炒)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
+                <textarea id="new-dish-desc" placeholder="菜品描述 (可选)" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500" rows="3"></textarea>
+                 <div>
+                    <input type="checkbox" id="new-dish-custom-price" class="mr-2"><label for="new-dish-custom-price">是否为时令价菜品</label>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-4 mt-6 flex-shrink-0">
+                <button id="cancel-add-dish-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
+                <button id="confirm-add-dish-btn" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">确认增加</button>
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, doc, serverTimestamp, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+        
+        let db;
+        let menuData = {};
+        let categories = [];
+        const menuCollectionName = "menu";
+        
+        // This is a one-time seed. If the menu collection is empty, this data will be added.
+        const initialMenuData = {
+            '饭类': [{ name: '东北五常蒸米饭', price: 5, type: '家常', unit: '碗', desc: '选用黑龙江五常核心产区稻花香米，泉水蒸制，米香四溢，粒粒分明。' }, { name: '广式腊味煲仔饭', price: 48, type: '普通', unit: '份', desc: '精选皇上皇腊肠与润肠，搭配丝苗米猛火煲制，锅巴金黄香脆。' }, { name: '黑松露福建炒饭', price: 88, type: '商务', unit: '份', desc: '意大利黑松露酱、鲜虾、鸡肉、瑶柱等烩成芡汁，淋在蛋炒饭上。' }],
+            '菜类': [{ name: '开水白菜', price: 128, type: '商务', unit: '位', desc: '国宴名菜，顶级清汤，汤味浓醇，白菜软嫩化渣。' }, { name: '麻婆豆腐', price: { '小': 32, '中': 42, '大': 52 }, type: '家常', unit: '份', desc: '集川菜“麻、辣、烫、香、酥、嫩、鲜、活”八味于一体。' }, { name: '松茸菌炖绣球豆腐', price: 198, type: '商务', unit: '位', desc: '考验极致刀工，整块豆腐切成数千根细丝呈绣球状，配以珍贵松茸清炖。' }],
+            '海鲜类': [{ name: '东星斑', price: 688, type: '商务', unit: '公斤', desc: '顶级石斑，肉质雪白鲜嫩。', isCustomizable: true, cookingStyles: ['清蒸', '豉汁蒸', '油浸'] }, { name: '澳洲龙虾', price: 998, type: '包厢', unit: '公斤', desc: '肉质饱满弹牙，味道鲜美。', isCustomizable: true, cookingStyles: ['刺身', '蒜蓉开边蒸', '避风塘', '上汤焗'] }, { name: '蒜蓉粉丝蒸扇贝', price: 18, type: '普通', unit: '个', desc: '精选大连鲜活扇贝，搭配龙口粉丝与秘制蒜蓉酱蒸制。' }],
+            '肉类': [{ name: '御品佛跳墙', price: 388, type: '商务', unit: '位', desc: '精选鲍鱼、海参、花胶、瑶柱等十几种珍贵食材，文火慢炖超过八小时。' }, { name: '果木北京烤鸭', price: 298, type: '包厢', unit: '套', desc: '选用填鸭，以苹果木、枣木等果木为燃料烤制，鸭皮酥脆流油，肉质细嫩。' }, { name: '川味水煮牛肉', price: { '小': 68, '中': 88, '大': 108 }, type: '普通', unit: '份', desc: '牛肉滑嫩，汤底麻辣鲜香，最后淋上滚烫的热油，激发所有香料的味道。' }],
+            '套餐类': [{ name: '商务双人套餐', price: 498, type: '商务', unit: '套', desc: '包含：蓝莓山药, 黑椒安格斯牛仔骨, 松茸菌炖绣球豆腐(2位), 黑松露福建炒饭, 西湖龙井(1泡)' }, { name: '温馨家庭四人餐', price: 688, type: '家庭', unit: '套', desc: '包含：夫妻肺片, 秘制东坡肉, 古法蒸黄花鱼, 糖醋里脊(中), 清炒时蔬, 扬州炒饭(2份), 鲜榨橙汁(1扎)' }],
+            '饮料酒茶': [{ name: '鲜榨橙汁', price: 38, type: '普通', unit: '扎' }, { name: '53°飞天茅台(500ml)', price: 2999, type: '商务', unit: '瓶' }, { name: '武夷山大红袍', price: 128, type: '包厢', unit: '泡' }]
+        };
+
+        async function initializeFirebase() {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBjF_aSG30O_l8q4btRxdxpsz4ftwrsM1g",
+                authDomain: "yundingxuan-restaurant.firebaseapp.com",
+                projectId: "yundingxuan-restaurant",
+                storageBucket: "yundingxuan-restaurant.appspot.com",
+                messagingSenderId: "534167593828",
+                appId: "1:534167593828:web:9fb11dac7e69c11324d071",
+                measurementId: "G-218QGY5V8N"
+            };
+
+            // Intelligent check for placeholder config
+            if (!firebaseConfig.apiKey || firebaseConfig.apiKey.startsWith("AIzaSy") === false) {
+                 console.error("Firebase config is missing or is a placeholder.");
+                 return false;
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                const auth = getAuth(app);
+                await signInAnonymously(auth);
+                console.log("Firebase initialized and signed in anonymously.");
+                return true;
+            } catch (error) {
+                console.error("Firebase initialization failed:", error);
+                return false;
+            }
+        }
+        
+        async function seedInitialMenu() {
+            console.log("Seeding initial menu to Firestore...");
+            const batch = writeBatch(db);
+            let count = 0;
+            for (const category in initialMenuData) {
+                initialMenuData[category].forEach(item => {
+                    const docRef = doc(collection(db, menuCollectionName));
+                    // Add category to the item object itself for easier lookup
+                    batch.set(docRef, { ...item, category });
+                    count++;
+                });
+            }
+            await batch.commit();
+            console.log(`Seeded ${count} menu items.`);
+        }
+
+        async function loadMenu() {
+            return new Promise((resolve) => {
+                const menuCollectionRef = collection(db, menuCollectionName);
+                onSnapshot(menuCollectionRef, async (snapshot) => {
+                    if (snapshot.empty) {
+                        await seedInitialMenu();
+                        // The snapshot will re-trigger after seeding, so we don't need to resolve here.
+                    } else {
+                        const newMenuData = {};
+                        const newCategories = new Set();
+                        snapshot.forEach(doc => {
+                            const item = doc.data();
+                            if (!newMenuData[item.category]) {
+                                newMenuData[item.category] = [];
+                            }
+                            newMenuData[item.category].push({ id: doc.id, ...item });
+                            newCategories.add(item.category);
+                        });
+                        menuData = newMenuData;
+                        categories = Array.from(newCategories).sort();
+                        
+                        // Re-render categories and current menu view
+                        renderCategories();
+                        const activeCategoryButton = document.querySelector('.category-button.active');
+                        const currentCategory = activeCategoryButton ? activeCategoryButton.textContent : categories[0];
+                        if (currentCategory) {
+                           renderMenuItems(currentCategory);
+                        }
+                        resolve();
+                    }
+                });
+            });
+        }
+        
+        let currentWaiterId = null;
+        let currentTableInfo = null;
+        let currentOrder = [];
+        let currentItemForOptions = null;
+        
+        const pages = { login: document.getElementById('login-page'), setup: document.getElementById('setup-page'), menu: document.getElementById('menu-page'), confirmation: document.getElementById('confirmation-page'), };
+        const switchPage = (pageName) => {
+            Object.values(pages).forEach(page => page.classList.add('hidden'));
+            pages[pageName].classList.remove('hidden');
+        };
+
+        const renderCategories = () => {
+            const categoryNav = document.getElementById('category-nav');
+            const currentActive = categoryNav.querySelector('.active')?.textContent;
+            categoryNav.innerHTML = '';
+            categories.forEach(cat => {
+                const button = document.createElement('button');
+                button.className = `w-full text-left px-4 py-3 rounded-lg transition-all duration-200 hover:bg-teal-600/10 category-button`;
+                button.textContent = cat;
+                if (cat === currentActive || (!currentActive && cat === categories[0])) {
+                    button.classList.add('active');
+                }
+                button.addEventListener('click', () => {
+                    document.querySelectorAll('.category-button').forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+                    renderMenuItems(cat);
+                });
+                categoryNav.appendChild(button);
+            });
+        };
+
+        const renderMenuItems = (category) => {
+            document.getElementById('current-category-title').textContent = category;
+            const menuItemsContainer = document.getElementById('menu-items-container');
+            menuItemsContainer.innerHTML = '';
+            const items = menuData[category] || [];
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-md overflow-hidden flex flex-col transition-transform hover:shadow-xl hover:-translate-y-1';
+                let priceDisplay = '';
+                if (typeof item.price === 'object') { priceDisplay = `¥${Object.values(item.price)[0]}起/${item.unit}`; } 
+                else { priceDisplay = `¥${item.price}/${item.unit}`; }
+                card.innerHTML = `<div class="p-5 flex-grow"><div class="flex justify-between items-start"><h4 class="text-xl font-bold text-gray-800">${item.name}</h4><span class="text-lg font-semibold text-gray-700 whitespace-nowrap pl-4">${priceDisplay}</span></div><p class="text-gray-600 mt-2 text-sm whitespace-pre-wrap">${item.desc || ''}</p></div><button data-id="${item.id}" data-category="${category}" class="add-to-order-btn w-full bg-slate-800 hover:bg-teal-600 text-white font-bold py-3 px-4 transition duration-300">加入订单</button>`;
+                menuItemsContainer.appendChild(card);
+            });
+        };
+
+        const updateOrderSummary = () => {
+             const orderSummaryContainer = document.getElementById('order-summary');
+             const emptyOrderMessage = document.getElementById('empty-order-message');
+             const submitOrderBtn = document.getElementById('submit-order-btn');
+             const totalPriceEl = document.getElementById('total-price');
+
+            orderSummaryContainer.innerHTML = '';
+            if (currentOrder.length === 0) {
+                orderSummaryContainer.appendChild(emptyOrderMessage);
+                emptyOrderMessage.classList.remove('hidden');
+                submitOrderBtn.disabled = true;
+            } else {
+                emptyOrderMessage.classList.add('hidden');
+                currentOrder.forEach((orderItem, index) => {
+                    let details = [];
+                    if(orderItem.selectedPortion) details.push(orderItem.selectedPortion);
+                    if(orderItem.selectedStyle) details.push(orderItem.selectedStyle);
+                    if(orderItem.weight) details.push(`${orderItem.weight}${orderItem.unit}`);
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex justify-between items-center py-3 border-b border-gray-100';
+                    itemEl.innerHTML = `<div class="flex-grow pr-2"><p class="font-semibold text-gray-800">${orderItem.name}</p>${details.length > 0 ? `<p class="text-sm text-gray-500">${details.join(', ')}</p>` : ''}</div><div class="flex items-center space-x-3"><button data-index="${index}" class="quantity-change-btn decrease-btn bg-gray-200 w-6 h-6 rounded-full font-bold text-gray-600">-</button><span class="font-semibold w-4 text-center">${orderItem.quantity}</span><button data-index="${index}" class="quantity-change-btn increase-btn bg-gray-200 w-6 h-6 rounded-full font-bold text-gray-600">+</button></div><span class="w-24 text-right font-bold text-gray-800">¥${(orderItem.finalPrice * orderItem.quantity).toFixed(2)}</span>`;
+                    orderSummaryContainer.appendChild(itemEl);
+                });
+                submitOrderBtn.disabled = false;
+            }
+            const totalPrice = currentOrder.reduce((total, item) => total + (item.finalPrice * item.quantity), 0);
+            totalPriceEl.textContent = `¥ ${totalPrice.toFixed(2)}`;
+        };
+
+        const handleOpenOptionsModal = (item) => {
+            currentItemForOptions = item;
+            const optionsModal = document.getElementById('item-options-modal');
+            document.getElementById('item-options-title').textContent = item.name;
+            const sections = { portions: document.getElementById('portions-section'), styles: document.getElementById('cooking-styles-section'), price: document.getElementById('custom-price-section'), weight: document.getElementById('weight-section') };
+            Object.values(sections).forEach(s => s.classList.add('hidden'));
+            
+            if (typeof item.price === 'object') {
+                const container = document.getElementById('portions-container');
+                container.innerHTML = '';
+                sections.portions.classList.remove('hidden');
+                Object.entries(item.price).forEach(([size, price], index) => { container.innerHTML += `<div><input type="radio" name="portion" value="${size}" id="portion-${size}" class="sr-only" ${index === 0 ? 'checked' : ''}><label for="portion-${size}" class="modal-radio-label">${size} (¥${price})</label></div>`; });
+            }
+            if (item.cookingStyles && item.cookingStyles.length > 0) {
+                const container = document.getElementById('cooking-styles-container');
+                container.innerHTML = '';
+                sections.styles.classList.remove('hidden');
+                item.cookingStyles.forEach((style, index) => { container.innerHTML += `<div><input type="radio" name="cooking-style" value="${style}" id="style-${style}" class="sr-only" ${index === 0 ? 'checked' : ''}><label for="style-${style}" class="modal-radio-label">${style}</label></div>`; });
+            }
+            if (item.isCustomizable) {
+                document.getElementById('custom-price-unit').textContent = item.unit;
+                document.getElementById('custom-price-input').value = item.price;
+                document.getElementById('weight-unit').textContent = item.unit;
+                document.getElementById('weight-input').value = '';
+                sections.price.classList.remove('hidden');
+                sections.weight.classList.remove('hidden');
+            }
+            optionsModal.classList.remove('hidden');
+        };
+
+        const handleConfirmOptions = () => {
+            const item = currentItemForOptions;
+            let finalPrice = typeof item.price === 'number' ? item.price : 0;
+            let selectedPortion = null, selectedStyle = null, weight = null;
+            if (typeof item.price === 'object') {
+                const portionInput = document.querySelector('input[name="portion"]:checked');
+                selectedPortion = portionInput ? portionInput.value : Object.keys(item.price)[0];
+                finalPrice = item.price[selectedPortion];
+            }
+            if (item.cookingStyles && item.cookingStyles.length > 0) {
+                 const styleInput = document.querySelector('input[name="cooking-style"]:checked');
+                 selectedStyle = styleInput ? styleInput.value : item.cookingStyles[0];
+            }
+            if (item.isCustomizable) {
+                const customPrice = parseFloat(document.getElementById('custom-price-input').value);
+                weight = parseFloat(document.getElementById('weight-input').value);
+                if(isNaN(customPrice) || customPrice <= 0) { alert('请输入有效的时令价！'); return; }
+                if(isNaN(weight) || weight <= 0) { alert('请输入有效的数量！'); return; }
+                finalPrice = customPrice * weight;
+            }
+            currentOrder.push({ ...item, quantity: 1, finalPrice, selectedPortion, selectedStyle, weight });
+            updateOrderSummary();
+            document.getElementById('item-options-modal').classList.add('hidden');
+        };
+
+        const handleAddToOrderClick = (e) => {
+            if (!e.target.classList.contains('add-to-order-btn')) return;
+            const { id, category } = e.target.dataset;
+            const item = menuData[category].find(d => d.id == id);
+            const hasOptions = typeof item.price === 'object' || (item.cookingStyles && item.cookingStyles.length > 0) || item.isCustomizable;
+            if (hasOptions) { handleOpenOptionsModal(item); } 
+            else {
+                const existingItem = currentOrder.find(orderItem => orderItem.id === item.id && !orderItem.selectedPortion && !orderItem.selectedStyle);
+                if (existingItem) { existingItem.quantity++; } 
+                else { currentOrder.push({ ...item, quantity: 1, finalPrice: item.price }); }
+                updateOrderSummary();
+            }
+        };
+
+        const handleQuantityChange = (e) => {
+            if (!e.target.classList.contains('quantity-change-btn')) return;
+            const index = parseInt(e.target.dataset.index);
+            const orderItem = currentOrder[index];
+            if (e.target.classList.contains('increase-btn')) { orderItem.quantity++; } 
+            else if (e.target.classList.contains('decrease-btn')) {
+                orderItem.quantity--;
+                if (orderItem.quantity === 0) { currentOrder.splice(index, 1); }
+            }
+            updateOrderSummary();
+        };
+
+        const openAddDishModal = () => {
+            document.getElementById('new-dish-name').value = '';
+            document.getElementById('new-dish-price').value = '';
+            document.getElementById('new-dish-unit').value = '';
+            document.getElementById('new-dish-desc').value = '';
+            document.getElementById('new-dish-cooking-styles').value = '';
+            document.getElementById('new-dish-custom-price').checked = false;
+            const categorySelect = document.getElementById('new-dish-category');
+            categorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            categorySelect.innerHTML += `<option value="new_category">-- 添加新品类 --</option>`;
+            document.getElementById('add-dish-modal').classList.remove('hidden');
+        };
+
+        const handleAddNewDish = async () => {
+            const name = document.getElementById('new-dish-name').value.trim();
+            const priceStr = document.getElementById('new-dish-price').value.trim();
+            let category = document.getElementById('new-dish-category').value;
+            const type = document.getElementById('new-dish-type').value;
+            const unit = document.getElementById('new-dish-unit').value.trim() || '份';
+            const desc = document.getElementById('new-dish-desc').value.trim();
+            const cookingStylesStr = document.getElementById('new-dish-cooking-styles').value.trim();
+            const isCustomizable = document.getElementById('new-dish-custom-price').checked;
+            
+            if (category === 'new_category') {
+                const newCategoryName = prompt("请输入新的菜品品类名称:");
+                if (!newCategoryName || newCategoryName.trim() === '') {
+                    alert("品类名称不能为空!");
+                    return;
+                }
+                category = newCategoryName.trim();
+            }
+
+            if (!name || !priceStr) { alert('请输入有效的菜品名称和价格！'); return; }
+            let price;
+            if (priceStr.includes(':')) {
+                try { price = priceStr.split(',').reduce((obj, part) => { const [key, value] = part.split(':'); obj[key.trim()] = parseFloat(value); return obj; }, {}); } 
+                catch (e) { alert('分量价格格式错误！请使用 "名称:价格,名称:价格" 的格式。'); return; }
+            } else {
+                price = parseFloat(priceStr);
+                if (isNaN(price)) { alert('价格必须是数字！'); return; }
+            }
+            const newDish = { name, price, category, type, unit, desc, isCustomizable, cookingStyles: cookingStylesStr ? cookingStylesStr.split(',').map(s => s.trim()) : [] };
+            try {
+                await addDoc(collection(db, menuCollectionName), newDish);
+                document.getElementById('add-dish-modal').classList.add('hidden');
+            } catch (e) {
+                console.error("Error adding new dish: ", e);
+                alert('添加失败，请检查网络后重试。');
+            }
+        };
+
+        const handleLogin = () => {
+            const waiterIdInput = document.getElementById('waiter-id');
+            const loginError = document.getElementById('login-error');
+            const id = waiterIdInput.value;
+            if (/^\d{7}$/.test(id)) { 
+                currentWaiterId = id; 
+                document.getElementById('display-waiter-id').textContent = currentWaiterId; 
+                switchPage('setup'); 
+            } else { 
+                loginError.textContent = '请输入有效的 7 位数字编号。'; 
+            }
+        };
+
+        const handleFindTable = () => {
+            const guestCountInput = document.getElementById('guest-count');
+            const setupError = document.getElementById('setup-error');
+            const tableReco = document.getElementById('table-recommendation');
+
+            const guests = parseInt(guestCountInput.value);
+            if (isNaN(guests) || guests <= 0) { setupError.textContent = '请输入有效的客人人数。'; return; }
+            let tableType = guests <= 2 ? 'A' : guests <= 4 ? 'B' : guests <= 8 ? 'C' : 'V';
+            currentTableInfo = `${tableType}${Math.floor(Math.random() * 50) + 1}`;
+            document.getElementById('display-table-info').textContent = currentTableInfo;
+            tableReco.textContent = `已为您推荐桌号: ${currentTableInfo}`;
+            setTimeout(() => {
+                switchPage('menu');
+                renderCategories();
+                renderMenuItems(categories[0]);
+                updateOrderSummary();
+            }, 1500);
+        };
+        
+        const handleNewOrder = () => {
+            currentOrder = [];
+            currentTableInfo = null;
+            document.getElementById('guest-count').value = '';
+            document.getElementById('table-recommendation').textContent = '';
+            document.getElementById('setup-error').textContent = '';
+            switchPage('setup');
+        };
+
+        const handleSubmitOrder = async () => {
+            if (currentOrder.length === 0 || !db) return;
+            const submitOrderBtn = document.getElementById('submit-order-btn');
+            submitOrderBtn.disabled = true;
+            submitOrderBtn.textContent = '发送中...';
+
+            const orderPayload = {
+                waiterId: currentWaiterId,
+                tableId: currentTableInfo,
+                status: 'new', // Status for KDS: new -> preparing -> completed
+                timestamp: serverTimestamp(),
+                items: currentOrder.map(item => ({
+                    name: item.name,
+                    quantity: item.quantity,
+                    unit: item.unit,
+                    selectedPortion: item.selectedPortion || null,
+                    selectedStyle: item.selectedStyle || null,
+                    weight: item.weight || null,
+                    status: 'new' // Status for each dish: new -> preparing -> ready
+                }))
+            };
+
+            try {
+                const docRef = await addDoc(collection(db, "orders"), orderPayload);
+                console.log("Order sent with ID: ", docRef.id);
+                switchPage('confirmation');
+            } catch (e) {
+                console.error("Error sending order: ", e);
+                alert("发送订单失败，请检查网络后重试！");
+            } finally {
+                submitOrderBtn.disabled = false;
+                submitOrderBtn.textContent = '发送至厨房';
+            }
+        };
+
+        async function setupAndRun() {
+            const loginBtn = document.getElementById('login-btn');
+            const loginError = document.getElementById('login-error');
+            loginBtn.disabled = true;
+            loginBtn.textContent = '正在连接系统...';
+
+            const firebaseReady = await initializeFirebase();
+
+            if (!firebaseReady) {
+                loginBtn.textContent = '系统连接失败';
+                loginBtn.classList.remove('bg-teal-600', 'hover:bg-teal-700');
+                loginBtn.classList.add('bg-red-600', 'cursor-not-allowed');
+                loginError.textContent = '请检查网络或Firebase配置。';
+                return;
+            }
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = '登录';
+            
+            await loadMenu();
+
+            const waiterIdInput = document.getElementById('waiter-id');
+            const findTableBtn = document.getElementById('find-table-btn');
+            const menuItemsContainer = document.getElementById('menu-items-container');
+            const orderSummaryContainer = document.getElementById('order-summary');
+            const submitOrderBtn = document.getElementById('submit-order-btn');
+            const newOrderBtn = document.getElementById('new-order-btn');
+            const cancelOptionsBtn = document.getElementById('cancel-options-btn');
+            const confirmOptionsBtn = document.getElementById('confirm-options-btn');
+            const addNewDishBtnMain = document.getElementById('add-new-dish-btn-main');
+            const cancelAddDishBtn = document.getElementById('cancel-add-dish-btn');
+            const confirmAddDishBtn = document.getElementById('confirm-add-dish-btn');
+
+            loginBtn.addEventListener('click', handleLogin);
+            waiterIdInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLogin(); });
+            findTableBtn.addEventListener('click', handleFindTable);
+            menuItemsContainer.addEventListener('click', handleAddToOrderClick);
+            orderSummaryContainer.addEventListener('click', handleQuantityChange);
+            submitOrderBtn.addEventListener('click', handleSubmitOrder);
+            newOrderBtn.addEventListener('click', handleNewOrder);
+            cancelOptionsBtn.addEventListener('click', () => document.getElementById('item-options-modal').classList.add('hidden'));
+            confirmOptionsBtn.addEventListener('click', handleConfirmOptions);
+            addNewDishBtnMain.addEventListener('click', openAddDishModal);
+            cancelAddDishBtn.addEventListener('click', () => document.getElementById('add-dish-modal').classList.add('hidden'));
+            confirmAddDishBtn.addEventListener('click', handleAddNewDish);
+            
+            switchPage('login');
+            waiterIdInput.focus();
+        }
+        
+        setupAndRun();
+    </script>
+</body>
+</html>
+
