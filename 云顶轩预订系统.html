@@ -3,243 +3,819 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>云顶轩 - 专业餐饮系统 v2</title>
+    <title>云顶轩 - 餐饮管理系统</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <style>
-        :root {
-            --primary-accent: #0d9488; /* A sophisticated teal */
-            --primary-accent-dark: #0f766e;
-            --light-bg: #f8fafc;
-            --border-color: #e2e8f0;
+        body { font-family: 'Noto Sans SC', sans-serif; }
+        .modal-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
         }
-        body {
-            font-family: 'Inter', 'Noto Sans SC', sans-serif;
-            overscroll-behavior: none;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .category-button.active {
-            background-color: var(--primary-accent);
-            color: #FFFFFF;
-            font-weight: 600;
-            transform: scale(1.05);
-            box-shadow: 0 4px 14px 0 rgba(13, 148, 136, 0.39);
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #f1f1f1; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-        .modal-radio-label {
-            display: block; padding: 0.75rem 1rem; border: 1px solid var(--border-color); border-radius: 0.5rem;
-            cursor: pointer; transition: all 0.2s ease-in-out; text-align: center;
-        }
-        .modal-radio-label:hover { border-color: var(--primary-accent); }
-        input[type="radio"]:checked + .modal-radio-label {
-            background-color: var(--primary-accent); color: white; border-color: var(--primary-accent); font-weight: 500;
-        }
+        .scroll-hidden::-webkit-scrollbar { display: none; }
+        .scroll-hidden { -ms-overflow-style: none; scrollbar-width: none; }
+        .btn-primary { @apply bg-red-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-700 transition-all duration-200; }
+        .btn-secondary { @apply bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg shadow-sm hover:bg-gray-300 transition-all duration-200; }
+        .card { @apply bg-white rounded-xl shadow-lg overflow-hidden; }
+        .kitchen-ticket { @apply bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-lg shadow-md; }
     </style>
 </head>
-<body class="bg-slate-50 antialiased">
-    <div id="app" class="w-full h-screen overflow-hidden">
-        <!-- Login Page -->
-        <div id="login-page" class="w-full h-full flex items-center justify-center bg-cover bg-center" style="background-image: url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?q=80&w=2070&auto=format&fit=crop');">
-            <div class="bg-white/90 p-10 rounded-2xl shadow-2xl text-center max-w-md w-full backdrop-blur-sm">
-                <h1 class="text-4xl font-bold text-gray-800 mb-2">云顶轩</h1>
-                <p class="text-gray-600 mb-8">专业餐饮管理系统 v2</p>
-                <div class="mb-6">
-                    <input type="text" id="waiter-id" placeholder="请输入 7 位服务员编号" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 text-center tracking-[0.2em]" maxlength="7" pattern="\d{7}">
-                </div>
-                <button id="login-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl">登录</button>
-                <p id="login-error" class="text-red-500 mt-4 h-6"></p>
+<body class="bg-gray-100">
+
+    <!-- 全局容器 -->
+    <div id="app-container" class="w-full min-h-screen">
+
+        <!-- 登录界面 -->
+        <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen bg-gray-800 p-4">
+            <div class="text-center mb-8">
+                <h1 class="text-5xl font-bold text-white mb-2" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">云顶轩</h1>
+                <p class="text-xl text-gray-300">专业餐饮管理系统</p>
+            </div>
+            <div class="w-full max-w-sm bg-white p-8 rounded-2xl shadow-2xl">
+                <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">服务员登录</h2>
+                <input type="text" id="staff-id-input" placeholder="请输入7位员工编号" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg text-center focus:outline-none focus:border-red-500 transition-all" maxlength="7" pattern="\d*">
+                <p id="login-error" class="text-red-500 text-sm mt-2 text-center h-5"></p>
+                <button id="login-btn" class="w-full btn-primary mt-4 py-3 text-lg">登 录</button>
             </div>
         </div>
 
-        <!-- Setup Page -->
-        <div id="setup-page" class="w-full h-full flex items-center justify-center bg-slate-50 hidden">
-            <div class="bg-white p-10 rounded-2xl shadow-xl text-center max-w-lg w-full">
-                <h2 class="text-3xl font-bold text-gray-800 mb-8">开台设置</h2>
-                <div class="space-y-6">
-                    <div>
-                        <label for="guest-count" class="block text-left text-lg font-medium text-gray-700 mb-2">客人人数</label>
-                        <input type="number" id="guest-count" placeholder="请输入客人数量" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500">
-                    </div>
-                    <div>
-                        <label for="dining-type" class="block text-left text-lg font-medium text-gray-700 mb-2">用餐类型</label>
-                        <select id="dining-type" class="w-full px-4 py-3 text-lg border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500 bg-white">
-                            <option value="商务宴请">商务宴请</option>
-                            <option value="私密包厢">私密包厢</option>
-                            <option value="家庭聚会">家庭聚会</option>
-                            <option value="情侣约会">情侣约会</option>
-                            <option value="团队建设">团队建设</option>
-                            <option value="大厅散台">大厅散台</option>
-                            <option value="朋友家常">朋友家常</option>
-                        </select>
-                    </div>
+        <!-- 开台设置界面 -->
+        <div id="setup-screen" class="hidden p-6 max-w-7xl mx-auto">
+            <div class="flex justify-between items-center mb-6 pb-4 border-b">
+                <h1 class="text-3xl font-bold text-gray-800">开台设置</h1>
+                <div class="text-right">
+                    <p class="text-gray-600">服务员编号: <span id="display-staff-id" class="font-semibold text-gray-800"></span></p>
+                    <button id="logout-btn" class="text-sm text-red-500 hover:underline">退出登录</button>
                 </div>
-                <button id="find-table-btn" class="w-full mt-10 bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 shadow-lg hover:shadow-xl">智能配桌并开始点餐</button>
-                <p id="setup-error" class="text-red-500 mt-4 h-6"></p>
-                <p id="table-recommendation" class="text-green-600 font-semibold mt-4 h-8 text-xl"></p>
             </div>
-        </div>
 
-        <!-- Menu Page -->
-        <div id="menu-page" class="w-full h-screen flex bg-slate-100 hidden">
-             <aside class="w-64 bg-white text-gray-800 flex flex-col p-4 shadow-lg border-r border-slate-200">
-                <div class="text-center mb-6 border-b border-slate-200 pb-4">
-                     <h1 class="text-2xl font-bold text-teal-700">云顶轩</h1>
-                     <p class="text-sm text-slate-500 mt-2">服务员: <span id="display-waiter-id" class="font-semibold"></span></p>
-                     <p class="text-sm text-slate-500">桌号: <span id="display-table-info" class="font-semibold"></span></p>
-                </div>
-                <nav id="category-nav" class="flex-grow space-y-2 overflow-y-auto"></nav>
-                 <button id="add-new-dish-btn-main" class="mt-4 w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2 px-4 rounded-lg transition duration-300">增加新菜品</button>
-            </aside>
-
-            <main class="flex-1 p-6 overflow-y-auto">
-                <h2 id="current-category-title" class="text-3xl font-bold text-gray-800 mb-6">推荐菜品</h2>
-                <div id="menu-items-container" class="grid gap-6" style="grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));"></div>
-            </main>
-
-            <aside class="w-[420px] bg-white p-6 flex flex-col shadow-2xl border-l border-slate-200">
-                <h3 class="text-2xl font-bold text-gray-800 border-b-2 border-gray-200 pb-4 mb-4">当前订单</h3>
-                <div id="order-summary" class="flex-grow overflow-y-auto -mr-6 pr-5">
-                    <p id="empty-order-message" class="text-gray-500 text-center mt-10">您的订单是空的</p>
-                </div>
-                <div class="mt-auto border-t-2 border-gray-200 pt-4">
-                    <div class="flex justify-between items-center text-xl font-bold text-gray-800 mb-4">
-                        <span>总计</span>
-                        <span id="total-price">¥ 0.00</span>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">1. 输入用餐信息</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="guest-count" class="block text-sm font-medium text-gray-600 mb-1">客人人数</label>
+                            <input type="number" id="guest-count" min="1" class="w-full p-2 border border-gray-300 rounded-md" placeholder="例如: 8">
+                        </div>
+                        <div>
+                            <label for="dining-type" class="block text-sm font-medium text-gray-600 mb-1">用餐类型</label>
+                            <select id="dining-type" class="w-full p-2 border border-gray-300 rounded-md">
+                                <option value="商务">商务宴请</option>
+                                <option value="包厢">私密包厢</option>
+                                <option value="家庭">家庭聚会</option>
+                                <option value="普通">普通大厅</option>
+                                <option value="家常">精品家常</option>
+                            </select>
+                        </div>
+                        <button id="find-table-btn" class="w-full btn-primary mt-4">查找可用餐桌</button>
                     </div>
-                    <button id="submit-order-btn" class="w-full bg-red-600 hover:bg-red-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>发送至厨房</button>
                 </div>
-            </aside>
+
+                <div class="card p-6">
+                    <h2 class="text-xl font-semibold mb-4 text-gray-700">2. 选择可用餐桌</h2>
+                    <div id="table-selection" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 h-64 overflow-y-auto">
+                        <p class="text-gray-500 col-span-full text-center mt-8">请输入信息后查找餐桌</p>
+                    </div>
+                </div>
+            </div>
         </div>
         
-        <!-- Other pages and modals remain mostly the same structurally but are included for completeness -->
-         <div id="confirmation-page" class="w-full h-full flex items-center justify-center bg-green-50 hidden">
-            <div class="bg-white p-12 rounded-2xl shadow-xl text-center max-w-lg w-full">
-                <svg class="w-24 h-24 text-green-500 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <h2 class="text-4xl font-bold text-gray-800 mb-4">下单成功</h2>
-                <p class="text-xl text-gray-600 mb-8">订单已成功发送至厨房</p>
-                <button id="new-order-btn" class="w-full bg-teal-600 hover:bg-teal-700 text-white text-xl font-bold py-3 px-4 rounded-lg transition duration-300">创建新订单</button>
+        <!-- 主点餐 & 厨房监控界面 -->
+        <div id="main-screen" class="hidden">
+            <!-- 顶部导航 -->
+             <header class="bg-white shadow-md sticky top-0 z-40">
+                <div class="max-w-screen-2xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex items-center justify-between h-16">
+                        <div class="flex items-center">
+                            <h1 class="text-xl font-bold text-gray-800">云顶轩点餐系统</h1>
+                            <div class="ml-6 flex items-baseline space-x-4">
+                               <button id="show-ordering-view-btn" class="view-toggle-btn bg-red-600 text-white px-3 py-2 rounded-md text-sm font-medium">点餐主页</button>
+                               <button id="show-kitchen-view-btn" class="view-toggle-btn bg-transparent text-gray-600 hover:bg-gray-200 px-3 py-2 rounded-md text-sm font-medium">厨房监控</button>
+                            </div>
+                        </div>
+                        <div class="text-sm text-gray-600">
+                            <span>服务员: <span id="main-staff-id" class="font-semibold"></span></span> |
+                            <span>餐桌: <span id="main-table-id" class="font-semibold"></span></span> |
+                            <span>人数: <span id="main-guest-count" class="font-semibold"></span></span> |
+                            <span>类型: <span id="main-dining-type" class="font-semibold"></span></span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 点餐视图 -->
+            <div id="ordering-view">
+                 <div class="flex h-[calc(100vh-64px)]">
+                    <!-- 左侧菜单 -->
+                    <div class="w-4/5 flex flex-col bg-gray-50">
+                        <!-- 菜品分类 -->
+                        <div class="p-4 border-b">
+                            <div id="dish-categories" class="flex flex-wrap gap-2"></div>
+                             <button id="add-custom-dish-btn" class="ml-auto flex items-center bg-blue-500 text-white text-sm font-bold py-2 px-3 rounded-lg shadow-md hover:bg-blue-600 transition-all duration-200">
+                                <i data-feather="plus-circle" class="w-4 h-4 mr-1"></i>自定义菜品
+                            </button>
+                        </div>
+
+                        <!-- 菜品列表 -->
+                        <div id="dish-list" class="flex-1 p-4 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                            <!-- 菜品卡片将在这里动态生成 -->
+                        </div>
+                    </div>
+
+                    <!-- 右侧订单 -->
+                    <div class="w-1/5 bg-white shadow-lg flex flex-col">
+                        <div class="p-4 border-b">
+                            <h2 class="text-xl font-bold text-gray-800">当前订单</h2>
+                        </div>
+                        <div id="order-items" class="flex-1 p-4 overflow-y-auto space-y-2">
+                           <p class="text-gray-400 text-center mt-10">请从左侧添加菜品</p>
+                        </div>
+                        <div class="p-4 border-t bg-gray-50">
+                            <div class="flex justify-between items-center mb-4">
+                                <span class="text-lg font-semibold text-gray-700">总计</span>
+                                <span id="total-price" class="text-2xl font-bold text-red-600">¥ 0.00</span>
+                            </div>
+                            <button id="submit-order-btn" class="w-full btn-primary text-lg">下单发送至厨房</button>
+                             <button id="back-to-setup-btn" class="w-full btn-secondary text-sm mt-2">返回开台</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 厨房视图 -->
+             <div id="kitchen-view" class="hidden p-6 max-w-screen-2xl mx-auto">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">实时厨房订单</h2>
+                 <div id="kitchen-orders-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    <!-- 厨房订单卡片将在这里动态生成 -->
+                     <p id="no-orders-msg" class="text-gray-500 col-span-full text-center mt-16 text-xl">厨房暂无新订单</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单成功界面 -->
+        <div id="confirmation-screen" class="hidden flex flex-col items-center justify-center min-h-screen bg-green-50">
+            <div class="text-center p-10 bg-white rounded-2xl shadow-xl">
+                 <div class="w-24 h-24 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i data-feather="check" class="w-16 h-16"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-green-600 mb-2">下单成功！</h1>
+                <p class="text-lg text-gray-600 mb-8">订单已发送至厨房，请稍候。</p>
+                <button id="new-order-btn" class="btn-primary px-8 py-3 text-lg">开启新订单</button>
             </div>
         </div>
     </div>
     
     <!-- Modals -->
-     <div id="item-options-modal" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] flex flex-col">
-            <h3 class="text-2xl font-bold mb-4 text-gray-800 flex-shrink-0" id="item-options-title">菜品选项</h3>
-            <div class="overflow-y-auto space-y-5 pr-2 -mr-4 flex-grow">
-                <div id="portions-section" class="hidden">
-                    <h4 class="font-semibold text-gray-700 mb-2">选择分量</h4>
-                    <div id="portions-container" class="grid grid-cols-3 gap-2"></div>
-                </div>
-                <div id="cooking-styles-section" class="hidden">
-                    <h4 class="font-semibold text-gray-700 mb-2">选择做法</h4>
-                    <div id="cooking-styles-container" class="grid grid-cols-2 gap-2"></div>
-                </div>
-                <div id="custom-price-section" class="hidden">
-                    <h4 class="font-semibold text-gray-700 mb-2">时令价 (每 <span id="custom-price-unit"></span>)</h4>
-                    <input type="number" id="custom-price-input" class="w-full px-4 py-2 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500" placeholder="输入当前市价">
-                </div>
-                <div id="weight-section" class="hidden">
-                    <h4 class="font-semibold text-gray-700 mb-2">输入数量 (<span id="weight-unit"></span>)</h4>
-                    <input type="number" id="weight-input" class="w-full px-4 py-2 border rounded-lg text-lg focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500" placeholder="例如: 1.5">
-                </div>
+    <!-- 海鲜计价 Modal -->
+    <div id="seafood-modal" class="modal-backdrop hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 class="text-xl font-semibold mb-4">输入海鲜重量</h3>
+            <p class="mb-2">菜品: <span id="seafood-name" class="font-bold"></span></p>
+            <p class="mb-4">单价: <span id="seafood-price-per-kg" class="font-bold"></span> 元/公斤</p>
+            <div>
+                <label for="seafood-weight" class="block text-sm font-medium text-gray-700">重量 (公斤)</label>
+                <input type="number" id="seafood-weight" min="0.1" step="0.05" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm">
             </div>
-            <div class="flex justify-end space-x-4 mt-6 flex-shrink-0">
-                <button id="cancel-options-btn" class="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">取消</button>
-                <button id="confirm-options-btn" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">确认添加</button>
+            <p id="seafood-modal-error" class="text-red-500 text-sm h-5 mt-1"></p>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancel-seafood-btn" class="btn-secondary">取消</button>
+                <button id="confirm-seafood-btn" class="btn-primary">确认添加</button>
             </div>
         </div>
     </div>
 
-    <div id="add-dish-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <!-- Add dish modal remains the same -->
+    <!-- 自定义菜品 Modal -->
+    <div id="custom-dish-modal" class="modal-backdrop hidden">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <h3 class="text-xl font-semibold mb-4">添加自定义菜品</h3>
+            <div class="space-y-3">
+                <input type="text" id="custom-dish-name" placeholder="菜品名称" class="w-full p-2 border rounded">
+                <select id="custom-dish-category" class="w-full p-2 border rounded"></select>
+                <input type="number" id="custom-dish-price" placeholder="价格" class="w-full p-2 border rounded">
+                <textarea id="custom-dish-desc" placeholder="备注（可选）" class="w-full p-2 border rounded" rows="2"></textarea>
+            </div>
+            <p id="custom-dish-error" class="text-red-500 text-sm h-5 mt-1"></p>
+            <div class="mt-6 flex justify-end space-x-3">
+                <button id="cancel-custom-dish-btn" class="btn-secondary">取消</button>
+                <button id="confirm-custom-dish-btn" class="btn-primary">确认添加</button>
+            </div>
+        </div>
     </div>
-    
+
+    <!-- Firebase SDK -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, serverTimestamp, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
-        
-        let db;
-        let menuData = {};
-        let categories = [];
-        const menuCollectionName = "menu";
-        
-        const initialMenuData = { /* The expanded menu data is too long for this thought block, but it would be here */ };
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        async function initializeFirebase() {
-            const firebaseConfig = { /* YOUR CONFIG HERE */ };
-            // ... (rest of the initialization logic) ...
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBjF_aSG30O_l8q4btRxdxpsz4ftwrsM1g",
+            authDomain: "yundingxuan-restaurant.firebaseapp.com",
+            projectId: "yundingxuan-restaurant",
+            storageBucket: "yundingxuan-restaurant.appspot.com", // Corrected storage bucket
+            messagingSenderId: "534167593828",
+            appId: "1:534167593828:web:9fb11dac7e69c11324d071",
+            measurementId: "G-218QGY5V8N"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- State Management ---
+        let currentStaffId = null;
+        let currentOrder = [];
+        let currentTable = {};
+        let menuData = [];
+        let allTables = [];
+
+        // --- DOM Elements ---
+        const screens = {
+            login: document.getElementById('login-screen'),
+            setup: document.getElementById('setup-screen'),
+            main: document.getElementById('main-screen'),
+            confirmation: document.getElementById('confirmation-screen'),
+        };
+        const views = {
+            ordering: document.getElementById('ordering-view'),
+            kitchen: document.getElementById('kitchen-view'),
+        };
+        const viewToggleBtns = document.querySelectorAll('.view-toggle-btn');
+        const loginBtn = document.getElementById('login-btn');
+        const logoutBtn = document.getElementById('logout-btn');
+        const staffIdInput = document.getElementById('staff-id-input');
+        const findTableBtn = document.getElementById('find-table-btn');
+        const submitOrderBtn = document.getElementById('submit-order-btn');
+        const newOrderBtn = document.getElementById('new-order-btn');
+        const backToSetupBtn = document.getElementById('back-to-setup-btn');
+
+        // --- Initial Data ---
+        const CATEGORIES = ['饭类', '菜类', '海鲜类', '肉类', '套餐类', '饮料', '酒', '茶'];
+        const DINING_TYPES = ['商务', '包厢', '家庭', '普通', '家常'];
+
+        function generateInitialMenu() {
+            // Simplified menu generation for brevity
+            let idCounter = 1;
+            const createDish = (name, category, price, diningTypes, isSignature = false, unit = '份') => 
+                ({ id: idCounter++, name, category, price, diningTypes, isSignature, unit });
+            
+            return [
+                // 饭类
+                createDish('至尊鲍汁炒饭', '饭类', 88, ['商务', '包厢'], true),
+                createDish('瑶柱蛋白炒饭', '饭类', 58, ['商务', '家庭']),
+                createDish('广式腊味煲仔饭', '饭类', 68, ['家庭', '家常']),
+                createDish('黑松露滑鸡蒸饭', '饭类', 78, ['包厢']),
+                createDish('五常大米饭', '饭类', 5, DINING_TYPES),
+                createDish('咸鱼鸡粒炒饭', '饭类', 48, ['家常', '普通']),
+                createDish('手工鲜肉粽', '饭类', 18, ['家庭', '家常']),
+                createDish('扬州炒饭', '饭类', 38, ['普通']),
+                createDish('福建海鲜烩饭', '饭类', 68, ['家庭', '商务']),
+                createDish('生滚牛肉粥', '饭类', 38, ['家常', '普通']),
+
+                // 菜类
+                createDish('开水白菜', '菜类', 128, ['商务', '包厢'], true),
+                createDish('白灼菜心', '菜类', 38, DINING_TYPES),
+                createDish('蒜蓉西兰花', '菜类', 48, DINING_TYPES),
+                createDish('干煸四季豆', '菜类', 42, ['家常', '普通']),
+                createDish('鱼香茄子煲', '菜类', 45, ['家常', '普通']),
+                createDish('地三鲜', '菜类', 38, ['家常']),
+                createDish('麻婆豆腐', '菜类', 32, ['家常', '普通']),
+                createDish('上汤娃娃菜', '菜类', 48, ['家庭', '商务']),
+                createDish('清炒时蔬', '菜类', 35, DINING_TYPES),
+                createDish('蚝油生菜', '菜类', 32, DINING_TYPES),
+
+                // 海鲜类 (价格为0，表示自定义)
+                createDish('清蒸东星斑', '海鲜类', 1196, ['商务', '包厢'], true, '公斤'),
+                createDish('蒜蓉粉丝蒸澳龙', '海鲜类', 898, ['商务', '包厢'], true, '公斤'),
+                createDish('椒盐皮皮虾', '海鲜类', 298, ['家庭', '普通'], false, '公斤'),
+                createDish('姜葱炒花蟹', '海鲜类', 358, ['家庭', '商务'], false, '公斤'),
+                createDish('白灼基围虾', '海鲜类', 198, ['普通', '家常'], false, '公斤'),
+                createDish('豉汁蒸鲍鱼', '海鲜类', 58, ['商务', '包厢'], false, '只'),
+                createDish('粉丝蒸元贝', '海鲜类', 28, ['家庭', '商务'], false, '只'),
+                createDish('辣炒花蛤', '海鲜类', 68, ['家常', '普通'], false, '份'),
+                createDish('清蒸多宝鱼', '海鲜类', 258, ['家庭', '商务'], false, '公斤'),
+                createDish('海胆刺身', '海鲜类', 98, ['商务', '包厢'], false, '只'),
+
+                // 肉类
+                createDish('脆皮乳鸽皇', '肉类', 188, ['商务', '包厢'], true),
+                createDish('北京烤鸭', '肉类', 298, ['商务', '家庭'], true),
+                createDish('东坡肉', '肉类', 98, ['包厢', '家庭']),
+                createDish('糖醋里脊', '肉类', 58, ['家常', '普通']),
+                createDish('黑椒牛仔骨', '肉类', 128, ['商务', '家庭']),
+                createDish('水煮牛肉', '肉类', 88, ['家常', '普通']),
+                createDish('梅菜扣肉', '肉类', 78, ['家常', '家庭']),
+                createDish('蜜汁叉烧', '肉类', 88, ['普通', '家常']),
+                createDish('辣子鸡', '肉类', 78, ['家常', '普通']),
+                createDish('京酱肉丝', '肉类', 68, ['普通', '家常']),
+
+                // ... (套餐类, 饮料, 酒, 茶 can be added similarly)
+                createDish('商务双人套餐', '套餐类', 588, ['商务']),
+                createDish('家庭四人欢享餐', '套餐类', 888, ['家庭']),
+                createDish('鲜榨橙汁', '饮料', 68, DINING_TYPES, false, '扎'),
+                createDish('茅台飞天', '酒', 2999, ['商务', '包厢']),
+                createDish('西湖龙井', '茶', 188, ['商务', '包厢']),
+            ];
         }
-        
-        async function seedInitialMenu() {
-            console.log("Seeding initial menu to Firestore...");
-            const batch = writeBatch(db);
-            let count = 0;
-            for (const category in initialMenuData) {
-                initialMenuData[category].forEach(item => {
-                    const docRef = doc(collection(db, menuCollectionName));
-                    batch.set(docRef, { ...item, category });
-                    count++;
-                });
+
+        function generateTables() {
+            const tables = [];
+            // 包厢
+            for(let i=1; i<=5; i++) tables.push({ id: `V${i}`, type: '包厢', capacity: 12, isOccupied: false });
+            // 商务大桌
+            for(let i=1; i<=5; i++) tables.push({ id: `B${i}`, type: '商务', capacity: 10, isOccupied: false });
+             // 家庭桌
+            for(let i=1; i<=10; i++) tables.push({ id: `F${i}`, type: '家庭', capacity: 8, isOccupied: false });
+             // 普通/家常
+            for(let i=1; i<=10; i++) tables.push({ id: `H${i}`, type: '普通', capacity: 4, isOccupied: false });
+            for(let i=11; i<=20; i++) tables.push({ id: `H${i}`, type: '家常', capacity: 2, isOccupied: false });
+            return tables;
+        }
+
+
+        // --- UI Rendering ---
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.add('hidden'));
+            if (screens[screenName]) {
+                screens[screenName].classList.remove('hidden');
             }
-            await batch.commit();
-            console.log(`Seeded ${count} menu items.`);
         }
 
-        async function loadMenu() {
-            return new Promise((resolve) => {
-                const menuCollectionRef = collection(db, menuCollectionName);
-                onSnapshot(menuCollectionRef, async (snapshot) => {
-                    if (snapshot.empty) {
-                        await seedInitialMenu();
-                        // The snapshot will re-trigger after seeding, so we don't need to resolve here.
-                    } else {
-                        const newMenuData = {};
-                        const newCategories = new Set();
-                        snapshot.forEach(doc => {
-                            const item = doc.data();
-                            if (!newMenuData[item.category]) {
-                                newMenuData[item.category] = [];
-                            }
-                            newMenuData[item.category].push({ id: doc.id, ...item });
-                            newCategories.add(item.category);
-                        });
-                        menuData = newMenuData;
-                        categories = Array.from(newCategories).sort(); // Sort categories alphabetically
-                        renderCategories();
-                        if (document.querySelector('.category-button.active')) {
-                             renderMenuItems(document.querySelector('.category-button.active').textContent);
-                        } else {
-                             renderMenuItems(categories[0]);
-                        }
-                        resolve();
-                    }
-                });
+        function switchMainView(viewName) {
+            Object.values(views).forEach(view => view.classList.add('hidden'));
+             viewToggleBtns.forEach(btn => btn.classList.replace('bg-red-600', 'bg-transparent'));
+             viewToggleBtns.forEach(btn => btn.classList.replace('text-white', 'text-gray-600'));
+
+
+            if(viewName === 'ordering') {
+                views.ordering.classList.remove('hidden');
+                document.getElementById('show-ordering-view-btn').classList.replace('bg-transparent', 'bg-red-600');
+                document.getElementById('show-ordering-view-btn').classList.replace('text-gray-600', 'text-white');
+            } else if (viewName === 'kitchen') {
+                views.kitchen.classList.remove('hidden');
+                document.getElementById('show-kitchen-view-btn').classList.replace('bg-transparent', 'bg-red-600');
+                document.getElementById('show-kitchen-view-btn').classList.replace('text-gray-600', 'text-white');
+            }
+        }
+
+        function renderCategories() {
+            const container = document.getElementById('dish-categories');
+            container.innerHTML = '';
+            CATEGORIES.forEach((cat, index) => {
+                const button = document.createElement('button');
+                button.textContent = cat;
+                button.className = `category-btn px-4 py-2 text-sm font-medium rounded-full transition-colors duration-200 ${index === 0 ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`;
+                button.dataset.category = cat;
+                container.appendChild(button);
+            });
+             container.appendChild(document.getElementById('add-custom-dish-btn'));
+        }
+
+        function renderDishes(category) {
+            const container = document.getElementById('dish-list');
+            container.innerHTML = '';
+            const diningType = document.getElementById('dining-type').value;
+            const filteredDishes = menuData.filter(dish => 
+                dish.category === category && (dish.diningTypes.includes(diningType) || dish.diningTypes.includes('家常'))
+            );
+            
+            if (filteredDishes.length === 0) {
+                 container.innerHTML = `<p class="col-span-full text-center text-gray-500 mt-8">该分类下暂无推荐菜品。</p>`;
+                 return;
+            }
+
+            filteredDishes.forEach(dish => {
+                const card = document.createElement('div');
+                card.className = 'card cursor-pointer transform hover:scale-105 transition-transform duration-200';
+                card.innerHTML = `
+                    <div class="p-4">
+                        <h3 class="font-bold text-md text-gray-800">${dish.name} ${dish.isSignature ? '<span class="text-xs text-red-500">(招牌)</span>' : ''}</h3>
+                        <p class="text-lg font-semibold text-red-600 mt-2">¥${dish.price} / ${dish.unit}</p>
+                    </div>
+                `;
+                card.onclick = () => addToOrder(dish);
+                container.appendChild(card);
             });
         }
         
-        // ... (The rest of the JS code is heavily refactored but the key changes are `loadMenu` and `handleAddNewDish` now writing to Firestore) ...
+        function updateOrderSummary() {
+            const container = document.getElementById('order-items');
+            const totalEl = document.getElementById('total-price');
+            container.innerHTML = '';
+            let totalPrice = 0;
 
-        async function handleAddNewDish() {
-            // ... (get values from inputs) ...
-            const newDish = { /* create dish object */ };
-            try {
-                await addDoc(collection(db, menuCollectionName), newDish);
-                addDishModal.classList.add('hidden');
-                // No need to manually re-render, onSnapshot will handle it.
-                // alert('新菜品已永久保存！');
-            } catch (e) {
-                console.error("Error adding new dish: ", e);
-                alert('添加失败，请检查网络后重试。');
+            if (currentOrder.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-center mt-10">请从左侧添加菜品</p>';
+                totalEl.textContent = '¥ 0.00';
+                return;
+            }
+
+            currentOrder.forEach((item, index) => {
+                const itemTotal = item.price * item.quantity;
+                totalPrice += itemTotal;
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'flex justify-between items-center text-sm p-2 rounded-md hover:bg-gray-100';
+                itemDiv.innerHTML = `
+                    <div>
+                        <p class="font-semibold text-gray-800">${item.name} ${item.weight ? `(${item.weight}kg)` : ''}</p>
+                        <p class="text-gray-500">¥${item.price.toFixed(2)} x ${item.quantity}</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-bold text-gray-800">¥${itemTotal.toFixed(2)}</span>
+                        <button class="remove-item-btn text-red-500 hover:text-red-700" data-index="${index}">
+                            <i data-feather="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(itemDiv);
+            });
+            
+            totalEl.textContent = `¥ ${totalPrice.toFixed(2)}`;
+            feather.replace();
+        }
+
+        function renderKitchenOrders(orders) {
+            const container = document.getElementById('kitchen-orders-container');
+            const noOrdersMsg = document.getElementById('no-orders-msg');
+            container.innerHTML = '';
+            
+            if (orders.length === 0) {
+                noOrdersMsg.classList.remove('hidden');
+                return;
+            }
+            
+            noOrdersMsg.classList.add('hidden');
+
+            orders.forEach(order => {
+                const ticket = document.createElement('div');
+                ticket.className = 'kitchen-ticket';
+                let itemsHtml = order.items.map(item => `
+                    <li class="flex justify-between">
+                        <span>${item.name} ${item.weight ? `(${item.weight}kg)` : ''}</span>
+                        <span class="font-bold">x ${item.quantity}</span>
+                    </li>
+                `).join('');
+
+                ticket.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <h4 class="font-bold text-lg">桌号: ${order.tableId}</h4>
+                        <span class="text-xs font-mono">${new Date(order.timestamp?.toDate()).toLocaleTimeString()}</span>
+                    </div>
+                    <p class="text-sm mb-2">人数: ${order.guestCount}, 类型: ${order.diningType}</p>
+                    <ul class="text-sm space-y-1 mb-4 border-t border-b border-dashed border-yellow-400 py-2">${itemsHtml}</ul>
+                    <button data-id="${order.id}" class="complete-order-btn w-full bg-green-500 text-white py-1 rounded hover:bg-green-600 transition-colors">完成此单</button>
+                `;
+                container.appendChild(ticket);
+            });
+        }
+        
+        // --- Event Handlers & Logic ---
+        function handleLogin() {
+            const staffId = staffIdInput.value;
+            const errorEl = document.getElementById('login-error');
+            if (/^\d{7}$/.test(staffId)) {
+                currentStaffId = staffId;
+                document.getElementById('display-staff-id').textContent = currentStaffId;
+                errorEl.textContent = '';
+                switchScreen('setup');
+            } else {
+                errorEl.textContent = '请输入有效的7位数字编号。';
             }
         }
+
+        function handleLogout() {
+            currentStaffId = null;
+            staffIdInput.value = '';
+            switchScreen('login');
+        }
+
+        function handleFindTable() {
+            const guestCount = parseInt(document.getElementById('guest-count').value);
+            const diningType = document.getElementById('dining-type').value;
+
+            if (!guestCount || guestCount <= 0) {
+                alert('请输入有效的客人人数');
+                return;
+            }
+            
+            const availableTables = allTables.filter(table => {
+                const typeMatch = table.type === diningType || (diningType === '家常' && table.type === '普通') || (diningType === '普通' && table.type === '家常');
+                return !table.isOccupied && table.capacity >= guestCount && typeMatch;
+            });
+            
+            const container = document.getElementById('table-selection');
+            container.innerHTML = '';
+            if (availableTables.length > 0) {
+                availableTables.forEach(table => {
+                    const button = document.createElement('button');
+                    button.textContent = `${table.id} (${table.capacity}人)`;
+                    button.className = 'p-4 border rounded-lg text-center hover:bg-red-100 hover:border-red-500 transition-all';
+                    button.onclick = () => handleSelectTable(table, guestCount, diningType);
+                    container.appendChild(button);
+                });
+            } else {
+                container.innerHTML = `<p class="text-gray-500 col-span-full text-center mt-8">没有找到符合条件的空桌。</p>`;
+            }
+        }
+
+        function handleSelectTable(table, guestCount, diningType) {
+            currentTable = {
+                id: table.id,
+                guestCount,
+                diningType
+            };
+            
+            document.getElementById('main-staff-id').textContent = currentStaffId;
+            document.getElementById('main-table-id').textContent = currentTable.id;
+            document.getElementById('main-guest-count').textContent = currentTable.guestCount;
+            document.getElementById('main-dining-type').textContent = currentTable.diningType;
+            
+            // Reset order state
+            currentOrder = [];
+            updateOrderSummary();
+            
+            renderCategories();
+            document.querySelector('.category-btn').click(); // Select first category
+            switchScreen('main');
+            switchMainView('ordering');
+        }
+
+        function addToOrder(dish) {
+             if (dish.unit === '公斤' || dish.unit === '斤') {
+                openSeafoodModal(dish);
+                return;
+            }
+
+            const existingItem = currentOrder.find(item => item.id === dish.id);
+            if (existingItem) {
+                existingItem.quantity++;
+            } else {
+                currentOrder.push({ ...dish, quantity: 1 });
+            }
+            updateOrderSummary();
+        }
+
+        function removeFromOrder(index) {
+            currentOrder.splice(index, 1);
+            updateOrderSummary();
+        }
+
+        async function handleSubmitOrder() {
+            if (currentOrder.length === 0) {
+                alert('订单为空，不能提交！');
+                return;
+            }
+
+            try {
+                // Add order to Firestore
+                await addDoc(collection(db, "orders"), {
+                    staffId: currentStaffId,
+                    tableId: currentTable.id,
+                    guestCount: currentTable.guestCount,
+                    diningType: currentTable.diningType,
+                    items: currentOrder,
+                    totalPrice: currentOrder.reduce((sum, item) => sum + (item.price * item.quantity), 0),
+                    status: 'new', // new, preparing, ready, completed
+                    timestamp: serverTimestamp()
+                });
+                
+                // Update table status in Firestore
+                await setDoc(doc(db, "tables", currentTable.id), { isOccupied: true }, { merge: true });
+
+                switchScreen('confirmation');
+            } catch (e) {
+                console.error("Error adding document: ", e);
+                alert("下单失败，请检查网络连接或联系管理员。");
+            }
+        }
+        
+        // --- Modal Logic ---
+        let currentSeafoodDish = null;
+        const seafoodModal = document.getElementById('seafood-modal');
+        function openSeafoodModal(dish) {
+            currentSeafoodDish = dish;
+            document.getElementById('seafood-name').textContent = dish.name;
+            document.getElementById('seafood-price-per-kg').textContent = dish.price;
+            document.getElementById('seafood-weight').value = '';
+            document.getElementById('seafood-modal-error').textContent = '';
+            seafoodModal.classList.remove('hidden');
+        }
+
+        function closeSeafoodModal() {
+            seafoodModal.classList.add('hidden');
+            currentSeafoodDish = null;
+        }
+
+        function confirmSeafood() {
+            const weight = parseFloat(document.getElementById('seafood-weight').value);
+            const errorEl = document.getElementById('seafood-modal-error');
+            if (!weight || weight <= 0) {
+                errorEl.textContent = '请输入有效的重量。';
+                return;
+            }
+            
+            const finalPrice = currentSeafoodDish.price * weight;
+            currentOrder.push({
+                ...currentSeafoodDish,
+                price: finalPrice, // Override price with calculated price
+                originalPrice: currentSeafoodDish.price,
+                unit: '份', // Change unit to avoid re-opening modal
+                weight: weight,
+                quantity: 1
+            });
+            updateOrderSummary();
+            closeSeafoodModal();
+        }
+
+        const customDishModal = document.getElementById('custom-dish-modal');
+        function openCustomDishModal() {
+            const categorySelect = document.getElementById('custom-dish-category');
+            categorySelect.innerHTML = CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
+            document.getElementById('custom-dish-name').value = '';
+            document.getElementById('custom-dish-price').value = '';
+            document.getElementById('custom-dish-desc').value = '';
+            document.getElementById('custom-dish-error').textContent = '';
+            customDishModal.classList.remove('hidden');
+        }
+
+        function closeCustomDishModal() {
+            customDishModal.classList.add('hidden');
+        }
+
+        function confirmCustomDish() {
+             const name = document.getElementById('custom-dish-name').value;
+             const category = document.getElementById('custom-dish-category').value;
+             const price = parseFloat(document.getElementById('custom-dish-price').value);
+             const description = document.getElementById('custom-dish-desc').value;
+             const errorEl = document.getElementById('custom-dish-error');
+
+             if (!name || !price || price <= 0) {
+                 errorEl.textContent = '请输入有效的菜品名称和价格。';
+                 return;
+             }
+
+             const newDish = {
+                id: `custom-${Date.now()}`,
+                name: `(自定义) ${name}`,
+                category,
+                price,
+                diningTypes: DINING_TYPES, // Available to all
+                isSignature: false,
+                unit: '份',
+                description,
+             };
+             
+             menuData.push(newDish); // Add to local menu data for this session
+             addToOrder(newDish);
+             closeCustomDishModal();
+        }
+
+        // --- Firebase Listeners ---
+        function setupFirestoreListeners() {
+            // Listen for table status changes
+            onSnapshot(collection(db, "tables"), (snapshot) => {
+                const tablesFromDb = [];
+                snapshot.forEach((doc) => {
+                    tablesFromDb.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // If DB is empty, use initial data and upload it
+                if (tablesFromDb.length === 0) {
+                    console.log("No tables in Firestore, uploading initial set.");
+                    allTables = generateTables();
+                    allTables.forEach(table => {
+                        setDoc(doc(db, "tables", table.id), table);
+                    });
+                } else {
+                    allTables = tablesFromDb;
+                }
+            });
+
+            // Listen for new kitchen orders
+            const q = query(collection(db, "orders"), where("status", "==", "new"), orderBy("timestamp", "asc"));
+            onSnapshot(q, (snapshot) => {
+                const newOrders = [];
+                snapshot.forEach((doc) => {
+                    newOrders.push({ id: doc.id, ...doc.data() });
+                });
+                renderKitchenOrders(newOrders);
+            });
+        }
+        
+        async function completeOrderInKitchen(orderId) {
+            try {
+                const orderRef = doc(db, "orders", orderId);
+                await setDoc(orderRef, { status: 'completed' }, { merge: true });
+                console.log(`Order ${orderId} marked as completed.`);
+                // Note: The realtime listener will automatically remove it from the view
+            } catch (error) {
+                console.error("Error completing order:", error);
+                alert("无法完成订单，请重试。");
+            }
+        }
+
+
+        // --- App Initialization ---
+        function init() {
+            // Event Listeners
+            loginBtn.addEventListener('click', handleLogin);
+            staffIdInput.addEventListener('keypress', (e) => {
+                if(e.key === 'Enter') handleLogin();
+            });
+            logoutBtn.addEventListener('click', handleLogout);
+
+            findTableBtn.addEventListener('click', handleFindTable);
+            submitOrderBtn.addEventListener('click', handleSubmitOrder);
+            
+            newOrderBtn.addEventListener('click', () => {
+                document.getElementById('guest-count').value = '';
+                document.getElementById('table-selection').innerHTML = '<p class="text-gray-500 col-span-full text-center mt-8">请输入信息后查找餐桌</p>';
+                switchScreen('setup');
+            });
+            backToSetupBtn.addEventListener('click', () => {
+                 if(confirm('您确定要放弃当前订单并返回开台界面吗？')) {
+                    switchScreen('setup');
+                }
+            });
+
+            viewToggleBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (e.currentTarget.id === 'show-ordering-view-btn') {
+                        switchMainView('ordering');
+                    } else {
+                        switchMainView('kitchen');
+                    }
+                });
+            });
+
+            document.getElementById('dish-categories').addEventListener('click', (e) => {
+                if (e.target.classList.contains('category-btn')) {
+                    document.querySelectorAll('.category-btn').forEach(btn => {
+                        btn.classList.remove('bg-red-600', 'text-white');
+                        btn.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    });
+                    e.target.classList.add('bg-red-600', 'text-white');
+                    e.target.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+                    renderDishes(e.target.dataset.category);
+                }
+            });
+            
+            document.getElementById('order-items').addEventListener('click', (e) => {
+                const removeBtn = e.target.closest('.remove-item-btn');
+                if (removeBtn) {
+                    removeFromOrder(parseInt(removeBtn.dataset.index));
+                }
+            });
+
+            // Modals
+            document.getElementById('cancel-seafood-btn').addEventListener('click', closeSeafoodModal);
+            document.getElementById('confirm-seafood-btn').addEventListener('click', confirmSeafood);
+            document.getElementById('add-custom-dish-btn').addEventListener('click', openCustomDishModal);
+            document.getElementById('cancel-custom-dish-btn').addEventListener('click', closeCustomDishModal);
+            document.getElementById('confirm-custom-dish-btn').addEventListener('click', confirmCustomDish);
+
+            // Kitchen view
+            document.getElementById('kitchen-orders-container').addEventListener('click', e => {
+                if (e.target.classList.contains('complete-order-btn')) {
+                    const orderId = e.target.dataset.id;
+                    if (confirm(`确认完成桌号 ${e.target.closest('.kitchen-ticket').querySelector('h4').textContent.split(': ')[1]} 的订单吗?`)) {
+                        completeOrderInKitchen(orderId);
+                    }
+                }
+            });
+
+
+            // --- Load Initial Data & Firebase ---
+            menuData = generateInitialMenu();
+            
+            signInAnonymously(auth)
+                .then(() => {
+                    console.log("Firebase anonymous sign-in successful.");
+                    setupFirestoreListeners();
+                })
+                .catch((error) => {
+                    console.error("Firebase anonymous sign-in failed:", error);
+                    alert("无法连接到后台服务，请刷新页面或联系管理员。");
+                });
+
+            switchScreen('login');
+            feather.replace();
+        }
+
+        // Run the App
+        document.addEventListener('DOMContentLoaded', init);
+
     </script>
 </body>
 </html>
