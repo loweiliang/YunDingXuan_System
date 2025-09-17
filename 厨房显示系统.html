@@ -198,6 +198,12 @@
             orders.sort((a, b) => a.timestamp.seconds - b.timestamp.seconds);
 
             orders.forEach(order => {
+                // Defensive check to ensure order.items is a sortable array.
+                if (!Array.isArray(order.items)) {
+                    console.warn(`Order ${order.id} has invalid 'items' data.`, order);
+                    return; // Skip rendering this broken order.
+                }
+                
                 // Classify dishes into stages
                 const prepItems = [], cookingItems = [], readyItems = [];
                 
@@ -325,3 +331,4 @@
     </script>
 </body>
 </html>
+
